@@ -1,0 +1,135 @@
+MAKING MUTATIONS
+
+# MUTATIONS USING THE GUI
+rein
+
+# load molecule
+# Crystal Structure of heterodimeric L. donovani topoisomerase I
+fetch 2B9S
+
+# clean and present
+remove ! polymer
+util.cbc
+show sticks, sc. + n. CA + r. PRO & n. N
+as sticks, polymer.nucleic
+bg_color white
+util.cnc
+orient
+
+
+#### Make mutation
+
+Wizard :: Mutagenesis :: Protein
+
+	# Find and pick your residue
+		# can also use sequence view
+	# states unmutated
+		# use state controls to cycle through rotamers
+	# pick new residue
+		[No Mutation] button has choices
+	# states mutated
+		# use state controls to cycle through rotamers
+
+# then
+Build :: Sculpting :: Sculpting
+Build :: Sculpting :: Activate
+
+# allow to relax
+Build :: Sculpting :: Deactivate
+Build :: Sculpting :: Sculpting
+
+# also 
+Wizard :: Mutagenesis :: nucleic acids
+
+
+
+
+
+
+
+# MUTATIONS USING THE COMMAND LINE
+rein
+
+# load molecule
+# Crystal Structure of heterodimeric L. donovani topoisomerase I
+fetch 2B9S
+
+# clean and present
+remove ! polymer
+util.cbc
+show sticks, sc. + n. CA + r. PRO & n. N
+as sticks, polymer.nucleic
+bg_color white
+util.cnc
+orient
+
+# Turn on the wizard
+cmd.wizard("mutagenesis")
+cmd.do("refresh_wizard")
+
+# mutate chain A residue 352 to PHE
+cmd.get_wizard().set_mode("HIS")
+cmd.get_wizard().do_select("A/150/")
+
+# Apply mutation
+cmd.get_wizard().apply()
+
+# relax structure
+select mutant, A/150/
+select new, br. mutant gap 10
+flag fix, br. mutant gap 10
+sculpt_activate 2B9S
+sculpt_iterate all, cycles=2000
+sculpt_deactivate 2B9S
+
+
+
+
+
+# MUTATIONS USING A BASH SCRIPT
+select br. polymer.protein within 5 of polymer.nucleic
+save interact.pdb, sele
+
+# this is a good example why you should use python!
+grep ' CA ' interact.pdb | cut -c 22-27 | sed 's/ /\//g;s/\/\//\//g' > res.list
+
+for YYY in $(cat res.list | head -5) ; do
+for XXX in ALA LYS ; do
+
+chain=$(echo $YYY | cut -c 1)
+num=$(echo $YYY | cut -c 3- | rev | cut -c 2- | rev)
+
+echo -en "\rmutating chain $chain res $num to $XXX"
+
+echo "
+rein
+fetch 2B9S, async=0
+remove ! polymer
+
+cmd.wizard(\"mutagenesis\")
+cmd.do(\"refresh_wizard\")
+
+# lets mutate residue 104 to GLN
+cmd.get_wizard().set_mode(\"$XXX\")
+cmd.get_wizard().do_select(\"$YYY\")
+
+# Apply the mutation
+cmd.get_wizard().apply()
+cmd.get_wizard().done()
+
+select mutant, $YYY
+flag fix, br. mutant gap 10
+sculpt_activate 2B9S
+sculpt_iterate all, cycles=1000
+sculpt_deactivate 2B9S
+
+save $XXX-$chain-$num.pdb, all
+" > mutate.pml
+pymol -qc mutate.pml 1>/dev/null
+
+while [ ! -f $XXX-$chain-$num.pdb ] ; do
+        sleep 1
+done
+
+done
+done

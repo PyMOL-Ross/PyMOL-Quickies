@@ -1,0 +1,87 @@
+https://users.ba.cnr.it/ic/crisrc25/Protein_Crystallography.html
+https://pymolwiki.org/index.php/Isomesh
+https://pymolwiki.org/index.php/Display_CCP4_Maps
+http://www.virology.wisc.edu/acp/Tutorials/PyMol-E-density.pdf
+
+
+rein
+
+# load molecule
+fetch 2F67
+
+# clean and present
+remove solvent + inorganic
+util.cbc
+as sticks
+bg_color white
+util.cnc
+orient
+
+
+#### bring in the density map
+
+# density map
+fetch 2F67, type=2fofc
+
+# map object has been created!
+# lets create a contour mesh
+2F67_2fofc : [A] : mesh : @ level 1.0
+
+2F67_2fofc_mesh : [C] : blue
+2F67_2fofc_mesh : [A] : rename
+	'1'
+
+# lets create a second contour mesh
+2F67_2fofc : [A] : mesh : @ level 2.0
+2F67_2fofc_mesh : [C] : magenta
+2F67_2fofc_mesh : [A] : rename
+	'2'
+
+# take a picture?
+as sticks
+set mesh_width, 0.5
+
+
+
+
+
+
+
+rein
+
+# load molecule
+fetch 2F67
+
+# clean and present
+remove solvent + inorganic
+util.cbc
+show sticks, sc. + n. CA + r. pro & n. N
+bg_color white
+util.cnc
+orient
+
+
+#### bring in the density map
+
+# density map
+fetch 2F67, type=2fofc
+
+# difference map
+fetch 2F67, type=fofc
+
+# density map parameters
+isomesh 2F67-2fofc-den, 2F67_2fofc, 1.5
+color blue, 2F67-2fofc-den
+
+# difference map parameters
+isomesh 2F67-fofc-pos, 2F67_fofc, 3
+isomesh 2F67-fofc-neg, 2F67_fofc, -3
+color green, 2F67-fofc-pos
+color red, 2F67-fofc-neg
+
+# trim the map around structures
+select chaina, c. A
+isomesh mesh_cA_carved, 2F67_2fofc, 1.5, selection=(chaina), carve=2
+color blue, mesh_cA_carved
+
+isomesh normal, fake_map, 1.0, center
